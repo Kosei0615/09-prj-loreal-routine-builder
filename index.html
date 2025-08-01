@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,9 +21,12 @@
       <header class="site-header">
         <img src="img/loreal-logo.png" alt="L'Oréal Logo" class="logo" />
         <h1 class="site-title">Smart Routine &amp; Product Advisor</h1>
+        <button id="rtlToggle" class="rtl-toggle" onclick="toggleRTL()">
+          <i class="fa-solid fa-language"></i> RTL
+        </button>
       </header>
 
-      <!-- Category Filter -->
+      <!-- Category Filter and Search -->
       <div class="search-section">
         <select id="categoryFilter">
           <option value="" disabled selected>Choose a Category</option>
@@ -37,6 +40,12 @@
           <option value="suncare">Suncare</option>
           <option value="fragrance">Fragrance</option>
         </select>
+        <input
+          type="text"
+          id="productSearch"
+          placeholder="Search products by name or keyword..."
+          style="display: none"
+        />
       </div>
 
       <!-- Products Grid -->
@@ -44,7 +53,17 @@
 
       <!-- Selected Products -->
       <div class="selected-products">
-        <h2>Selected Products</h2>
+        <div class="selected-products-header">
+          <h2>Selected Products</h2>
+          <button
+            id="clearAllBtn"
+            class="clear-all-btn"
+            onclick="clearAllSelectedProducts()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-trash"></i> Clear All
+          </button>
+        </div>
         <div id="selectedProductsList"></div>
         <button id="generateRoutine" class="generate-btn">
           <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
@@ -53,7 +72,15 @@
 
       <!------- Chat Area ------->
       <section class="chatbox">
-        <h2>Let's Build Your Routine</h2>
+        <h2>
+          Let's Build Your Routine
+          <span
+            id="searchStatus"
+            class="search-indicator"
+            title="Web search enabled for current information"
+            >🔍</span
+          >
+        </h2>
         <div id="chatWindow" class="chat-window"></div>
 
         <form id="chatForm" class="chat-form">
@@ -85,7 +112,7 @@
       </footer>
     </div>
 
-    <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
+    <!-- Load scripts -->
     <script src="secrets.js"></script>
     <script src="script.js"></script>
   </body>

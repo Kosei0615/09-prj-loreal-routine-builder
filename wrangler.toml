@@ -1,0 +1,11 @@
+name = "loreal-routine-api"
+main = "worker.js"
+compatibility_date = "2024-08-01"
+
+[env.production.vars]
+# Add your environment variables here
+# OPENAI_API_KEY will be set in the Cloudflare dashboard
+
+# For development
+[env.dev.vars]
+# Development environment variables
