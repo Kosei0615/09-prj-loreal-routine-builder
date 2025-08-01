@@ -20,6 +20,41 @@ let isRoutineGenerated = false;
 let currentCategory = "";
 let currentSearchTerm = "";
 
+// Fallback demo responses if not loaded from secrets-demo.js
+const FALLBACK_DEMO_RESPONSES = {
+  routine: `🌟 **Your Personalized L'Oréal Beauty Routine** 🌟
+
+Based on your selected products, here's your customized routine:
+
+**MORNING ROUTINE:**
+1. **Cleanser** - Gently cleanse your face with lukewarm water
+2. **Serum/Treatment** - Apply any serums to clean, damp skin  
+3. **Moisturizer** - Lock in hydration with your selected moisturizer
+4. **Sunscreen** - Always finish with SPF protection
+
+**EVENING ROUTINE:**
+1. **Makeup Removal** - Remove all makeup thoroughly
+2. **Cleanser** - Double cleanse for deep cleaning
+3. **Treatments** - Apply any active ingredients or treatments
+4. **Night Moisturizer** - Use a richer formula for overnight repair
+
+**TIPS:**
+✨ Always patch test new products
+✨ Introduce new products gradually  
+✨ Stay consistent for best results
+✨ Listen to your skin's needs
+
+*This is a demo response. For personalized AI-powered routines, please add your OpenAI API key.*`,
+  
+  chat: [
+    "That's a great question! L'Oréal products are formulated with high-quality ingredients to deliver professional results.",
+    "I'd be happy to help! Make sure to follow the routine order for optimal results.",
+    "For best results, consistency is key! Use your products regularly as recommended.",
+    "L'Oréal offers products for all skin types. Choose based on your specific needs and concerns.",
+    "Remember to always do a patch test when trying new products, especially if you have sensitive skin."
+  ]
+};
+
 /* Web Search Function using free search API */
 async function performWebSearch(query) {
   try {
@@ -166,6 +201,34 @@ Use this information along with your beauty expertise to provide a comprehensive
 
 /* Direct API call function */
 async function makeDirectAPICall(requestData) {
+  // Check if we're in demo mode
+  if (OPEN_API_KEY === "DEMO_MODE" || !OPEN_API_KEY || OPEN_API_KEY.startsWith("DEMO")) {
+    // Return demo response
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+    
+    const demoResponses = typeof DEMO_RESPONSES !== 'undefined' ? DEMO_RESPONSES : FALLBACK_DEMO_RESPONSES;
+    
+    if (requestData.messages.some(msg => msg.content.includes("Generate a routine") || msg.content.includes("selected products"))) {
+      return {
+        choices: [{
+          message: {
+            content: demoResponses.routine
+          }
+        }]
+      };
+    } else {
+      // Random chat response
+      const randomResponse = demoResponses.chat[Math.floor(Math.random() * demoResponses.chat.length)];
+      return {
+        choices: [{
+          message: {
+            content: randomResponse
+          }
+        }]
+      };
+    }
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -195,10 +258,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSelectedProductsDisplay();
 
   /* Initialize chat with welcome message */
-  displayChatMessage(
-    "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.",
-    "assistant"
-  );
+  const isDemo = OPEN_API_KEY === "DEMO_MODE" || !OPEN_API_KEY || OPEN_API_KEY.startsWith("DEMO");
+  const welcomeMessage = isDemo 
+    ? "Welcome to the L'Oréal Routine Builder demo! Select some products and I'll show you how the AI-powered routine generation works. This is a demonstration version with sample responses."
+    : "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.";
+  
+  displayChatMessage(welcomeMessage, "assistant");
 
   /* Initialize product display to show saved selections */
   setTimeout(() => {
