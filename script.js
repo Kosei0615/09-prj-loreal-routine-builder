@@ -1,6 +1,6 @@
 /* Configuration - Replace with your Cloudflare Worker URL */
 const WORKER_URL = "https://wander-chat-bot-2.yamagu-k1.workers.dev/"; // Replace with your actual worker URL
-const USE_WORKER = false; // Set to false for testing, true for secure worker
+const USE_WORKER = false; // Set to false for testing direct API calls first
 
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
@@ -19,41 +19,6 @@ let conversationHistory = [];
 let isRoutineGenerated = false;
 let currentCategory = "";
 let currentSearchTerm = "";
-
-// Fallback demo responses if not loaded from secrets-demo.js
-const FALLBACK_DEMO_RESPONSES = {
-  routine: `🌟 **Your Personalized L'Oréal Beauty Routine** 🌟
-
-Based on your selected products, here's your customized routine:
-
-**MORNING ROUTINE:**
-1. **Cleanser** - Gently cleanse your face with lukewarm water
-2. **Serum/Treatment** - Apply any serums to clean, damp skin  
-3. **Moisturizer** - Lock in hydration with your selected moisturizer
-4. **Sunscreen** - Always finish with SPF protection
-
-**EVENING ROUTINE:**
-1. **Makeup Removal** - Remove all makeup thoroughly
-2. **Cleanser** - Double cleanse for deep cleaning
-3. **Treatments** - Apply any active ingredients or treatments
-4. **Night Moisturizer** - Use a richer formula for overnight repair
-
-**TIPS:**
-✨ Always patch test new products
-✨ Introduce new products gradually  
-✨ Stay consistent for best results
-✨ Listen to your skin's needs
-
-*This is a demo response. For personalized AI-powered routines, please add your OpenAI API key.*`,
-  
-  chat: [
-    "That's a great question! L'Oréal products are formulated with high-quality ingredients to deliver professional results.",
-    "I'd be happy to help! Make sure to follow the routine order for optimal results.",
-    "For best results, consistency is key! Use your products regularly as recommended.",
-    "L'Oréal offers products for all skin types. Choose based on your specific needs and concerns.",
-    "Remember to always do a patch test when trying new products, especially if you have sensitive skin."
-  ]
-};
 
 /* Web Search Function using free search API */
 async function performWebSearch(query) {
@@ -165,7 +130,7 @@ Use this information along with your beauty expertise to provide a comprehensive
   }
 
   const requestData = {
-    model: "gpt-4o", // Using stable gpt-4o model
+    model: "gpt-4o-search-preview", // Specify model for the worker
     messages: enhancedMessages,
     max_tokens: maxTokens,
     temperature: temperature,
@@ -173,6 +138,7 @@ Use this information along with your beauty expertise to provide a comprehensive
 
   if (USE_WORKER) {
     try {
+      console.log("Using Cloudflare Worker:", WORKER_URL);
       // Use Cloudflare Worker
       const response = await fetch(WORKER_URL, {
         method: "POST",
@@ -183,70 +149,93 @@ Use this information along with your beauty expertise to provide a comprehensive
       });
 
       if (!response.ok) {
-        console.error(`Worker request failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Worker request failed: ${response.status}`, errorText);
+        console.log("Falling back to direct API call");
         // Fallback to direct API call
         return await makeDirectAPICall(requestData);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log("Worker response received successfully");
+      return data;
     } catch (error) {
       console.error("Worker error:", error);
+      console.log("Falling back to direct API call");
       // Fallback to direct API call
       return await makeDirectAPICall(requestData);
     }
   } else {
+    console.log("Using direct API call");
     return await makeDirectAPICall(requestData);
   }
 }
 
 /* Direct API call function */
 async function makeDirectAPICall(requestData) {
-  // Check if we're in demo mode
-  if (OPEN_API_KEY === "DEMO_MODE" || !OPEN_API_KEY || OPEN_API_KEY.startsWith("DEMO")) {
-    // Return demo response
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-    
-    const demoResponses = typeof DEMO_RESPONSES !== 'undefined' ? DEMO_RESPONSES : FALLBACK_DEMO_RESPONSES;
-    
-    if (requestData.messages.some(msg => msg.content.includes("Generate a routine") || msg.content.includes("selected products"))) {
-      return {
-        choices: [{
-          message: {
-            content: demoResponses.routine
-          }
-        }]
-      };
-    } else {
-      // Random chat response
-      const randomResponse = demoResponses.chat[Math.floor(Math.random() * demoResponses.chat.length)];
-      return {
-        choices: [{
-          message: {
-            content: randomResponse
-          }
-        }]
-      };
+  // Check if API key is available for direct calls
+  if (
+    !OPEN_API_KEY ||
+    OPEN_API_KEY === "your-api-key-here" ||
+    OPEN_API_KEY === "your-openai-api-key-here"
+  ) {
+    throw new Error(
+      "OpenAI API key not configured for direct API calls. Please set your API key in secrets.js"
+    );
+  }
+
+  console.log("Making direct API call to OpenAI");
+
+  // Try with the specified model first, then fallback to gpt-4o if needed
+  let model = requestData.model || "gpt-4o";
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPEN_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: requestData.messages,
+        max_tokens: requestData.max_tokens,
+        temperature: requestData.temperature,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `API request failed with ${model}: ${response.status}`,
+        errorText
+      );
+
+      // If search preview model fails, try regular gpt-4o
+      if (model === "gpt-4o-search-preview" && response.status === 400) {
+        console.log("Falling back to gpt-4o model");
+        return await makeDirectAPICall({
+          ...requestData,
+          model: "gpt-4o",
+        });
+      }
+
+      throw new Error(`API request failed: ${response.status} - ${errorText}`);
     }
+
+    const data = await response.json();
+    console.log("Direct API call successful with model:", model);
+    return data;
+  } catch (error) {
+    console.error("Direct API call error:", error);
+    throw error;
   }
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPEN_API_KEY}`,
-    },
-    body: JSON.stringify(requestData),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`API request failed: ${response.status}`, errorText);
-    throw new Error(`API request failed: ${response.status}`);
-  }
-
-  return await response.json();
 }
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM loaded, initializing L'Oréal Routine Builder");
+  console.log("USE_WORKER:", USE_WORKER);
+  console.log("WORKER_URL:", WORKER_URL);
+
   /* Load RTL preference */
   const savedDirection = localStorage.getItem("textDirection");
   if (savedDirection === "rtl") {
@@ -258,18 +247,18 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSelectedProductsDisplay();
 
   /* Initialize chat with welcome message */
-  const isDemo = OPEN_API_KEY === "DEMO_MODE" || !OPEN_API_KEY || OPEN_API_KEY.startsWith("DEMO");
-  const welcomeMessage = isDemo 
-    ? "Welcome to the L'Oréal Routine Builder demo! Select some products and I'll show you how the AI-powered routine generation works. This is a demonstration version with sample responses."
-    : "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.";
-  
-  displayChatMessage(welcomeMessage, "assistant");
+  displayChatMessage(
+    "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.",
+    "assistant"
+  );
 
   /* Initialize product display to show saved selections */
   setTimeout(() => {
     updateProductCardStyles();
     updateGenerateButtonState();
   }, 100);
+
+  console.log("Initialization complete");
 });
 
 /* Show initial placeholder until user selects a category */
@@ -282,9 +271,19 @@ productsContainer.innerHTML = `
 /* Load product data from JSON file */
 async function loadProducts() {
   if (allProducts.length === 0) {
-    const response = await fetch("products.json");
-    const data = await response.json();
-    allProducts = data.products;
+    try {
+      console.log("Loading products from products.json");
+      const response = await fetch("products.json");
+      if (!response.ok) {
+        throw new Error(`Failed to load products: ${response.status}`);
+      }
+      const data = await response.json();
+      allProducts = data.products;
+      console.log(`Loaded ${allProducts.length} products successfully`);
+    } catch (error) {
+      console.error("Error loading products:", error);
+      throw error;
+    }
   }
   return allProducts;
 }
@@ -486,13 +485,29 @@ function filterProducts() {
 
 /* Update product display based on current filters */
 async function updateProductDisplay() {
-  const products = await loadProducts();
-  const filteredProducts = filterProducts();
-  displayProducts(filteredProducts);
+  try {
+    console.log("Updating product display...");
+    const products = await loadProducts();
+    const filteredProducts = filterProducts();
+    console.log(`Displaying ${filteredProducts.length} filtered products`);
+    displayProducts(filteredProducts);
+  } catch (error) {
+    console.error("Error updating product display:", error);
+    productsContainer.innerHTML = `
+      <div class="error-message" style="color: #ff003b; text-align: center; padding: 20px;">
+        Error loading products. Please refresh the page.
+      </div>
+    `;
+  }
 }
 
 /* Generate routine using OpenAI API */
 async function generateRoutine() {
+  console.log(
+    "Generate routine called, selected products:",
+    selectedProducts.length
+  );
+
   if (selectedProducts.length === 0) {
     displayChatMessage(
       "Please select at least one product to generate a routine.",
@@ -514,6 +529,7 @@ async function generateRoutine() {
   );
 
   try {
+    console.log("Preparing product data for API call");
     /* Prepare the product data for the API */
     const productData = selectedProducts.map((product) => ({
       name: product.name,
@@ -544,6 +560,7 @@ ${productData
 
 Create a detailed, personalized routine that maximizes effectiveness using current beauty knowledge and L'Oréal's innovative formulations.`;
 
+    console.log("Making API request...");
     /* Use the enhanced API call with search context for current beauty trends */
     const data = await makeOpenAIRequest(
       [
@@ -554,10 +571,11 @@ Create a detailed, personalized routine that maximizes effectiveness using curre
       ],
       2000, // Token limit for detailed routine
       0.7,
-      true, // Enable search for current beauty trends
-      "2025 beauty trends skincare routine tips L'Oréal products"
+      false, // Disable search for now to test basic functionality first
+      ""
     );
 
+    console.log("API response received");
     const routineText = data.choices[0].message.content;
 
     /* Add to conversation history */
@@ -763,6 +781,7 @@ generateRoutineBtn.addEventListener("click", generateRoutine);
 
 /* Category filter event listener */
 categoryFilter.addEventListener("change", async (e) => {
+  console.log("Category selected:", e.target.value);
   currentCategory = e.target.value;
 
   /* Show search input when a category is selected */

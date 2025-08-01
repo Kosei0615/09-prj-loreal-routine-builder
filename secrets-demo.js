@@ -27,12 +27,12 @@ Based on your selected products, here's your customized routine:
 ✨ Listen to your skin's needs
 
 *This is a demo response. For personalized AI-powered routines, please add your OpenAI API key.*`,
-  
+
   chat: [
     "That's a great question! L'Oréal products are formulated with high-quality ingredients to deliver professional results.",
     "I'd be happy to help! Make sure to follow the routine order for optimal results.",
     "For best results, consistency is key! Use your products regularly as recommended.",
     "L'Oréal offers products for all skin types. Choose based on your specific needs and concerns.",
-    "Remember to always do a patch test when trying new products, especially if you have sensitive skin."
-  ]
+    "Remember to always do a patch test when trying new products, especially if you have sensitive skin.",
+  ],
 };

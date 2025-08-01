@@ -5,12 +5,14 @@ A comprehensive beauty routine builder that helps users create personalized skin
 ## 🌟 Features
 
 ### Core Functionality (50/50 points)
+
 - **Product Management**: 35 L'Oréal products with detailed information
 - **AI Integration**: GPT-4o powered routine generation with conversation memory
 - **Professional UI**: L'Oréal branded responsive design
 - **Smart Functionality**: Personalized routine generation based on selected products
 
 ### Bonus Features (25/25 points)
+
 - **Product Search** (10 pts): Category filtering + real-time text search
 - **RTL Language Support** (5 pts): Complete right-to-left layout with persistence
 - **Web Search Integration** (10 pts): Current beauty trends and information via DuckDuckGo API
@@ -19,22 +21,25 @@ A comprehensive beauty routine builder that helps users create personalized skin
 
 Visit the live demo: [https://kosei0615.github.io/09-prj-loreal-routine-builder/](https://kosei0615.github.io/09-prj-loreal-routine-builder/)
 
-*Note: The live demo runs in demo mode with sample responses. For full AI functionality, configure your OpenAI API key locally.*
+_Note: The live demo runs in demo mode with sample responses. For full AI functionality, configure your OpenAI API key locally._
 
 ## 🛠 Local Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/kosei0615/09-prj-loreal-routine-builder.git
 cd 09-prj-loreal-routine-builder
 ```
 
 2. Create a `secrets.js` file with your OpenAI API key:
+
 ```javascript
 const OPEN_API_KEY = "your-openai-api-key-here";
 ```
 
 3. Update `index.html` to use the real secrets file:
+
 ```html
 <!-- Change this line -->
 <script src="secrets-demo.js"></script>
@@ -43,6 +48,7 @@ const OPEN_API_KEY = "your-openai-api-key-here";
 ```
 
 4. Start a local server:
+
 ```bash
 python -m http.server 8000
 ```
@@ -52,11 +58,13 @@ python -m http.server 8000
 ## 🔧 Configuration
 
 ### For Local Development with AI
+
 - Use `secrets.js` with your real OpenAI API key
 - Set `USE_WORKER = false` in `script.js` for direct API calls
 - Or deploy the Cloudflare Worker and set `USE_WORKER = true`
 
 ### For GitHub Pages Deployment
+
 - Uses `secrets-demo.js` for demo functionality
 - No API key required - shows sample responses
 - Automatically detected and displays demo notice
@@ -85,8 +93,9 @@ python -m http.server 8000
 ## 🌐 Web Search Features
 
 Automatically detects questions about:
+
 - Latest beauty trends and news
-- Product reviews and comparisons  
+- Product reviews and comparisons
 - Current pricing and availability
 - New product launches
 - Trending ingredients and techniques
@@ -103,8 +112,9 @@ Automatically detects questions about:
 **Total: 75/75 points (100%)**
 
 - Core Requirements: 50/50
+
   - Product Management: 15/15
-  - AI Integration: 15/15  
+  - AI Integration: 15/15
   - User Interface: 10/10
   - Core Functionality: 10/10
 
