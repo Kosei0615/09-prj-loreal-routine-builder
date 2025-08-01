@@ -258,6 +258,16 @@ document.addEventListener("DOMContentLoaded", () => {
     updateGenerateButtonState();
   }, 100);
 
+  /* Add keyboard support for modal */
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("productModal");
+      if (modal.classList.contains("show")) {
+        closeProductModal();
+      }
+    }
+  });
+
   console.log("Initialization complete");
 });
 
@@ -395,7 +405,7 @@ function updateProductCardStyles() {
   });
 }
 
-/* Create HTML for displaying product cards with selection and description reveal */
+/* Create HTML for displaying product cards with selection and modal description */
 function displayProducts(products) {
   productsContainer.innerHTML = products
     .map(
@@ -407,16 +417,11 @@ function displayProducts(products) {
       <div class="product-info">
         <h3>${product.name}</h3>
         <p>${product.brand}</p>
-        <button class="description-toggle" onclick="toggleDescription(${
+        <button class="description-toggle" onclick="openProductModal(${
           product.id
         })">
           <i class="fa-solid fa-info-circle"></i> Description
         </button>
-        <div class="product-description" id="desc-${
-          product.id
-        }" style="display: none;">
-          ${product.description}
-        </div>
       </div>
     </div>
   `
@@ -444,16 +449,57 @@ function displayProducts(products) {
   });
 }
 
-/* Toggle product description visibility */
-function toggleDescription(productId) {
-  const descElement = document.getElementById(`desc-${productId}`);
-  const isVisible = descElement.style.display !== "none";
+/* Open product modal with detailed information */
+function openProductModal(productId) {
+  // Find the product data
+  const product = allProducts.find((p) => p.id === productId);
+  if (!product) return;
 
-  if (isVisible) {
-    descElement.style.display = "none";
+  // Populate modal with product information
+  document.getElementById("modalProductName").textContent = product.name;
+  document.getElementById("modalProductBrand").textContent = product.brand;
+  document.getElementById("modalProductCategory").textContent =
+    product.category;
+  document.getElementById("modalProductDescription").textContent =
+    product.description;
+  document.getElementById("modalProductImage").src = product.image;
+  document.getElementById("modalProductImage").alt = product.name;
+
+  // Update the select button
+  const selectBtn = document.getElementById("modalSelectBtn");
+  const isSelected = isProductSelected(productId);
+
+  if (isSelected) {
+    selectBtn.innerHTML = '<i class="fa-solid fa-check"></i> Already Added';
+    selectBtn.style.background = "#28a745";
+    selectBtn.disabled = true;
   } else {
-    descElement.style.display = "block";
+    selectBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add to Routine';
+    selectBtn.style.background = "linear-gradient(135deg, #ff003b, #ff4569)";
+    selectBtn.disabled = false;
+    selectBtn.onclick = () => {
+      toggleProductSelection(productId);
+      closeProductModal();
+    };
   }
+
+  // Show modal with animation
+  const modal = document.getElementById("productModal");
+  modal.style.display = "flex";
+  // Trigger reflow to ensure display change is applied
+  modal.offsetHeight;
+  modal.classList.add("show");
+}
+
+/* Close product modal */
+function closeProductModal() {
+  const modal = document.getElementById("productModal");
+  modal.classList.remove("show");
+
+  // Wait for animation to complete before hiding
+  setTimeout(() => {
+    modal.style.display = "none";
+  }, 300);
 }
 
 /* Filter products based on category and search term */

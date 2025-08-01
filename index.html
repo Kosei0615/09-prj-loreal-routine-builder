@@ -113,6 +113,44 @@
       </footer>
     </div>
 
+    <!-- Product Description Modal -->
+    <div id="productModal" class="modal-overlay" onclick="closeProductModal()">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="modalProductName">Product Name</h3>
+          <button class="modal-close" onclick="closeProductModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-product-image">
+            <img id="modalProductImage" src="" alt="Product Image" />
+          </div>
+          <div class="modal-product-details">
+            <div class="product-brand">
+              <i class="fa-solid fa-tag"></i>
+              <span id="modalProductBrand">Brand</span>
+            </div>
+            <div class="product-category">
+              <i class="fa-solid fa-folder"></i>
+              <span id="modalProductCategory">Category</span>
+            </div>
+            <div class="product-description-full">
+              <h4><i class="fa-solid fa-info-circle"></i> Description</h4>
+              <p id="modalProductDescription">
+                Product description goes here...
+              </p>
+            </div>
+            <div class="modal-actions">
+              <button class="select-product-btn" id="modalSelectBtn">
+                <i class="fa-solid fa-plus"></i> Add to Routine
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Load scripts -->
     <script src="secrets.js"></script>
     <script src="script.js"></script>
