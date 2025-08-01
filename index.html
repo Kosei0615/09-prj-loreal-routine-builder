@@ -152,7 +152,19 @@
     </div>
 
     <!-- Load scripts -->
-    <script src="secrets.js"></script>
+    <!-- Try to load real secrets first, fallback to demo version -->
+    <script>
+      // Try to load the real secrets file, if it fails, load demo version
+      const secretsScript = document.createElement("script");
+      secretsScript.onerror = function () {
+        // If secrets.js fails to load (like on GitHub Pages), load demo version
+        const demoScript = document.createElement("script");
+        demoScript.src = "secrets-demo.js";
+        document.head.appendChild(demoScript);
+      };
+      secretsScript.src = "secrets.js";
+      document.head.appendChild(secretsScript);
+    </script>
     <script src="script.js"></script>
   </body>
 </html>

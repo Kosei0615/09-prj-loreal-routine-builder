@@ -1,6 +1,9 @@
 /* Configuration - Replace with your Cloudflare Worker URL */
 const WORKER_URL = "https://wander-chat-bot-2.yamagu-k1.workers.dev/"; // Replace with your actual worker URL
-const USE_WORKER = false; // Set to false for testing direct API calls first
+const USE_WORKER = true; // Use worker for production deployment
+
+/* Check if we're in a deployed environment without secrets */
+const IS_DEPLOYED = typeof OPEN_API_KEY === "undefined";
 
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
@@ -136,7 +139,10 @@ Use this information along with your beauty expertise to provide a comprehensive
     temperature: temperature,
   };
 
-  if (USE_WORKER) {
+  // In deployed environment, always use worker
+  const shouldUseWorker = USE_WORKER || IS_DEPLOYED;
+
+  if (shouldUseWorker) {
     try {
       console.log("Using Cloudflare Worker:", WORKER_URL);
       // Use Cloudflare Worker
@@ -151,9 +157,16 @@ Use this information along with your beauty expertise to provide a comprehensive
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Worker request failed: ${response.status}`, errorText);
-        console.log("Falling back to direct API call");
-        // Fallback to direct API call
-        return await makeDirectAPICall(requestData);
+
+        // Only fallback to direct API if not deployed and API key is available
+        if (!IS_DEPLOYED) {
+          console.log("Falling back to direct API call");
+          return await makeDirectAPICall(requestData);
+        } else {
+          throw new Error(
+            `Worker request failed: ${response.status} - ${errorText}. Please check your Cloudflare Worker configuration.`
+          );
+        }
       }
 
       const data = await response.json();
@@ -161,9 +174,16 @@ Use this information along with your beauty expertise to provide a comprehensive
       return data;
     } catch (error) {
       console.error("Worker error:", error);
-      console.log("Falling back to direct API call");
-      // Fallback to direct API call
-      return await makeDirectAPICall(requestData);
+
+      // Only fallback to direct API if not deployed and API key is available
+      if (!IS_DEPLOYED) {
+        console.log("Falling back to direct API call");
+        return await makeDirectAPICall(requestData);
+      } else {
+        throw new Error(
+          `Cloudflare Worker error: ${error.message}. Please check your worker configuration.`
+        );
+      }
     }
   } else {
     console.log("Using direct API call");
@@ -175,12 +195,13 @@ Use this information along with your beauty expertise to provide a comprehensive
 async function makeDirectAPICall(requestData) {
   // Check if API key is available for direct calls
   if (
+    typeof OPEN_API_KEY === "undefined" ||
     !OPEN_API_KEY ||
     OPEN_API_KEY === "your-api-key-here" ||
     OPEN_API_KEY === "your-openai-api-key-here"
   ) {
     throw new Error(
-      "OpenAI API key not configured for direct API calls. Please set your API key in secrets.js"
+      "Direct API calls not available in deployed environment. Using Cloudflare Worker instead."
     );
   }
 
@@ -234,6 +255,7 @@ async function makeDirectAPICall(requestData) {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM loaded, initializing L'Oréal Routine Builder");
   console.log("USE_WORKER:", USE_WORKER);
+  console.log("IS_DEPLOYED:", IS_DEPLOYED);
   console.log("WORKER_URL:", WORKER_URL);
 
   /* Load RTL preference */
@@ -247,10 +269,17 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSelectedProductsDisplay();
 
   /* Initialize chat with welcome message */
-  displayChatMessage(
-    "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.",
-    "assistant"
-  );
+  if (IS_DEPLOYED) {
+    displayChatMessage(
+      "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine. This app uses a secure Cloudflare Worker for API calls.",
+      "assistant"
+    );
+  } else {
+    displayChatMessage(
+      "Welcome! Select some L'Oréal products and I'll help you create the perfect beauty routine.",
+      "assistant"
+    );
+  }
 
   /* Initialize product display to show saved selections */
   setTimeout(() => {
